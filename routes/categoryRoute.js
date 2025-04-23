@@ -4,7 +4,8 @@ const categoryController = require("../controllers/categoryController")
 const { checkAuth } = require("../middlewares/checkAuth");
 
 // Category Management
-router.get("/",categoryController.getCategories);//→ Get all category
+router.get("/",categoryController.getCategories);//→ Get category
+router.get("/all",categoryController.allCategories);//→ Get all category
 router.get("/:id",categoryController.getSingleCategory);//→ Get a single category by ID
 router.post("/admin",checkAuth, categoryController.addCategory); //→ Create a new category (admin)
 router.put("/admin/:id",checkAuth, categoryController.updateCategory ); //→ Update a category (admin)

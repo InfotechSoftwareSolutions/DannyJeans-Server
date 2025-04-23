@@ -110,9 +110,8 @@ const getAllOrder = async (req, res) => {
 
 //✅ Create Order
 const createOrder = async (req, res) => {
-  console.log("createOrder");
-
   try {
+    console.log("createOrder");
     const userId = req.userId;
 
     const { paymentMethod, currency = "INR" } = req.body;

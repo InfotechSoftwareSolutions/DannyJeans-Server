@@ -25,7 +25,7 @@ const getAllProducts = async (res) => {
 };
 
 // ✅ Get All Products
-const getProducts = async (req, res) => {
+const allProducts = async (req, res) => {
   try {
 
     const products = await Product.find().populate(
@@ -56,6 +56,41 @@ const getProducts = async (req, res) => {
     });
   }
 };
+
+// ✅ Get Products
+const getProducts = async (req, res) => {
+  try {
+    // Only fetch products that are active
+    const products = await Product.find({ isActive: true }).populate(
+      "category",
+      "name description"
+    );
+
+    if (!products || products.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No active products found. Please add products first.",
+      });
+    }
+
+    const newArrivedProducts = [...products].reverse();
+
+    res.status(200).json({
+      success: true,
+      message: "Active products retrieved successfully.",
+      products,
+      newArrivedProducts,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while retrieving the products.",
+      error: error.message,
+    });
+  }
+};
+
 
 
 
@@ -489,6 +524,7 @@ const getTodayOffersProducts = async (req, res) => {
 
 module.exports = {
   getProducts,
+  allProducts,
   getSingleProduct,
   addProduct,
   updateProduct,

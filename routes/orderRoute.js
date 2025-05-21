@@ -3,10 +3,6 @@ const { checkAuth } = require("../middlewares/checkAuth");
 const router = express.Router()
 const orderControllers = require("../controllers/orderControllers")
 
-function abc(req,res,next){
-    console.log("haiii");
-    
-}
 
 // Order Management
 router.get("/", orderControllers.getAllOrder); //→ Get user's orders

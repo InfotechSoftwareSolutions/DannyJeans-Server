@@ -1,6 +1,27 @@
 const { Offer } = require("../models/offerModel");
 const mongoose = require("mongoose");
 
+// ✅ get offers without isActive false 
+const offers = async (req, res) => {
+  try {
+
+    const offers = await Offer.find({ isActive: true }); // Fetch all offers
+
+    if (!offers) {
+      return res.status(404).json({success: false, message: "Offer not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+       message: "Offers fetched successfully",
+        offers 
+      });
+      
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Internal Server Error" });
+  }
+};
+
 // ✅ get all offers
 const getAllOffers = async (req, res) => {
   try {
@@ -157,6 +178,7 @@ const toggleOfferStatus = async (req, res) => {
 
 
 module.exports = {
+  offers,
   getAllOffers,
   createOffer,
   getOffers,

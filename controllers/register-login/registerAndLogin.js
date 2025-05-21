@@ -74,7 +74,7 @@ const login = async (req, res,next) => {
             return next(error);
         }
 
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email ,  isActive: true });
         console.log(user);
         
         if (!user) {

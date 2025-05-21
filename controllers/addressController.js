@@ -7,7 +7,7 @@ const getAddresses = async (req, res) => {
     try {
         const addresses = await Address.find();
 
-        if (!addresses || addresses.length === 0) {
+        if (!addresses) {
             return res.status(400).json({
                 success: false,
                 message: "No addresses found. Please add an address first.",
@@ -20,6 +20,8 @@ const getAddresses = async (req, res) => {
             data: addresses,
         });
     } catch (error) {
+        console.log(error,"====error");
+        
         res.status(500).json({
             success: false,
             message: "An error occurred while retrieving the addresses.",

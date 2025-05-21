@@ -5,7 +5,8 @@ const offerController = require("../controllers/offerController")
 
 
 // Offer Management
-router.get("/",offerController.getAllOffers);//→ Get all offer
+router.get("/",offerController.offers);//→ Get all offer
+router.get("/all",offerController.getAllOffers);//→ Get all offer
 router.get("/:id",offerController.getOfferById);//→ Get a single offer by ID
 router.post("/add", offerController.createOffer); //→ Create a new offer (admin)
 router.put("/:id", offerController.updateOffer ); //→ Update a offer (admin)

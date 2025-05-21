@@ -4,38 +4,7 @@ const { Product } = require("../models/productModel");
 const { Category } = require("../models/categoryModel");
 const { User } = require("../models/userModel.js");
 
-// ✅ Get All Products
-
-const getProducts = async (req, res) => {
-  try {
-    const products = await Product.find().populate(
-      "category",
-      "name description"
-    ); // Populate category
-
-    if (!products || products.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No products found. Please add products first.",
-      });
-    }
-
-    const newArrivedProducts = [...products].reverse();
-    res.status(200).json({
-      success: true,
-      message: "Products retrieved successfully.",
-      products,
-      newArrivedProducts,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "An error occurred while retrieving the products.",
-      error: error.message,
-    });
-  }
-};
-
+// ✅ Get All Products. It is a util function
 const getAllProducts = async (res) => {
   try {
     const products = await Product.find();
@@ -55,13 +24,89 @@ const getAllProducts = async (res) => {
   }
 };
 
+// ✅ Get All Products
+const allProducts = async (req, res) => {
+  try {
+
+    const products = await Product.find().populate(
+      "category",
+      "name description"
+    ); // Populate category
+
+    if (!products) {
+      return res.status(400).json({
+        success: false,
+        message: "No products found. Please add products first.",
+      });
+    }
+
+    const newArrivedProducts = [...products].reverse();
+    res.status(200).json({
+      success: true,
+      message: "Products retrieved successfully.",
+      products,
+      newArrivedProducts,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while retrieving the products.",
+      error: error.message,
+    });
+  }
+};
+
+// ✅ Get Products
+const getProducts = async (req, res) => {
+  try {
+    // Only fetch products that are active
+    const products = await Product.find({ isActive: true }).populate(
+      "category",
+      "name description"
+    );
+
+    if (!products || products.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No active products found. Please add products first.",
+      });
+    }
+
+    const newArrivedProducts = [...products].reverse();
+
+    res.status(200).json({
+      success: true,
+      message: "Active products retrieved successfully.",
+      products,
+      newArrivedProducts,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while retrieving the products.",
+      error: error.message,
+    });
+  }
+};
+
+
+
+
+// ✅ Taking a single item from the cart
 const getCartSingleItem = async (req, res) => {
   try {
+
     const userId = req.userId;
-    const { id } = req.params;
+    const { productId } = req.params;
+
+    if (!productId) {
+      return res.status(400).json({ message: "Product ID is required" });
+    }
 
     const user = await User.findOne(
-      { _id: userId, "cart.product": id },
+      { _id: userId, "cart.product": productId },
       { "cart.$": 1 } // Only return the matching cart item
     ).populate("cart.product");
 
@@ -76,7 +121,7 @@ const getCartSingleItem = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Product retrieved successfully.",
-      product,
+      product
     });
   } catch (error) {
     console.error("Error fetching cart item:", error);
@@ -84,17 +129,18 @@ const getCartSingleItem = async (req, res) => {
   }
 };
 
+// ✅ Filtering product
 const getFilterProducts = async (req, res) => {
   try {
-    //const { categoryId } = req.query; // Extract category ID from query params
-    const { id } = req.params; // Extract category ID from query params
-    console.log(req.params, "req.params");
-    // console.log("categoryId",categoryId);
-    if (!id) {
+
+    const { categoryId } = req.params; // Extract category ID from query params
+
+    if (!categoryId) {
       return res.status(400).json({ message: "Category ID is required" });
     }
 
-    const product = await Product.find({ category: id }).populate("category"); // Fetch products with category details
+    const product = await Product.find({ category: categoryId }).populate("category"); // Fetch products with category details
+
     // Validation: Check if products exist
     if (!product) {
       return res.status(400).json({
@@ -106,44 +152,24 @@ const getFilterProducts = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Products retrieved successfully.",
-      product,
+      product
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// const getProducts = async (req, res) => {
-//     try {
-//         const product = await Product.find();
-
-//         // Validation: Check if products exist
-//         if (!product) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "No products found. Please add products first.",
-//             });
-//         }
-
-//         res.status(200).json({
-//             success: true,
-//             message: "Products retrieved successfully.",
-//             data: product,
-//         });
-//     } catch (error) {
-//         res.status(500).json({
-//             success: false,
-//             message: "An error occurred while retrieving the products.",
-//             error: error.message,
-//         });
-//     }
-// };
-
 // ✅ Get Single product
 const getSingleProduct = async (req, res) => {
   try {
-    const { id } = req.params;
-    const product = await Product.findById(id);
+
+    const { productId } = req.params;
+
+    if (!productId) {
+      return res.status(400).json({ message: "Product ID is required" });
+    }
+    
+    const product = await Product.findById(productId);
 
     if (!product) {
       return res.status(404).json({
@@ -155,7 +181,7 @@ const getSingleProduct = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Product retrieved successfully.",
-      product,
+      product
     });
   } catch (error) {
     res.status(500).json({
@@ -167,9 +193,9 @@ const getSingleProduct = async (req, res) => {
 };
 
 //✅ Add a new product
-
 const addProduct = async (req, res) => {
   try {
+<<<<<<< HEAD
     let {
       name,
       description,
@@ -179,17 +205,25 @@ const addProduct = async (req, res) => {
       category,
       stock,
     } = req.body;
+=======
+
+    let { name, description, product_price, sale_price, offer, category, stock } = req.body;
+>>>>>>> 1e29eb9e2b089ad15e68569191c92f4f51939c1d
 
     // Parse and validate the variant
     let variant = [];
+
     if (req.body.variant) {
       try {
+
         variant = JSON.parse(req.body.variant);
+
         if (!Array.isArray(variant)) {
           return res
             .status(400)
             .json({ message: "Invalid variant format. Must be an array." });
         }
+
       } catch (error) {
         return res
           .status(400)
@@ -224,6 +258,7 @@ const addProduct = async (req, res) => {
 
     // Check if the product already exists
     const existingProduct = await Product.findOne({ name });
+
     if (existingProduct) {
       return res
         .status(400)
@@ -254,8 +289,9 @@ const addProduct = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Product added successfully!",
-      product,
+      product
     });
+
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -269,20 +305,16 @@ const addProduct = async (req, res) => {
 // ✅ Update Product
 const updateProduct = async (req, res) => {
   try {
-    console.log("updateProduct");
-    const { id } = req.params;
-    console.log(req.params, " req.params");
+
+    const { productId } = req.params;
     const { name, description, price, category, stock, images } = req.body;
-    console.log(
-      name,
-      description,
-      price,
-      category,
-      stock,
-      images,
-      "name, description, price, category, stock, images"
-    );
-    const product = await Product.findById(id);
+
+    if (!productId) {
+      return res.status(400).json({ message: "Product ID is required" });
+    }
+
+    const product = await Product.findById(productId);
+
     if (!product) return res.status(404).json({ message: "Product not found" });
 
     // Update fields if provided
@@ -308,8 +340,9 @@ const updateProduct = async (req, res) => {
     res.json({
       success: true,
       message: "Product updated successfully!",
-      products,
+      products
     });
+
   } catch (error) {
     console.log(error, "error");
     res.status(500).json({
@@ -323,9 +356,13 @@ const updateProduct = async (req, res) => {
 // ✅ Delete Product
 const deleteProduct = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { productId } = req.params;
 
-    const product = await Product.findById(id);
+    if (!productId) {
+      return res.status(400).json({ message: "Product ID is required" });
+    }
+
+    const product = await Product.findById(productId);
 
     if (!product) {
       return res.status(404).json({
@@ -349,8 +386,9 @@ const deleteProduct = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Product deleted successfully!",
-      products,
+      products
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -360,97 +398,18 @@ const deleteProduct = async (req, res) => {
   }
 };
 
-const getProductsByCategory = async (req, res) => {
-  try {
-    const productsByCategory = await Category.aggregate([
-      {
-        $lookup: {
-          from: "products", // Collection name should match in MongoDB
-          localField: "_id",
-          foreignField: "category",
-          as: "products",
-        },
-      },
-      {
-        $project: {
-          name: 1, // Category name
-          description: 1,
-          offer_price: 1,
-          isActive: 1,
-          products: 1, // Include all products in that category
-        },
-      },
-    ]);
-    console.log(getProductsByCategory, "====getProductsByCategory");
-
-    res.status(200).json(productsByCategory);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-//   const toggleProductStatus = async (req, res) => {
-//     try {
-//         console.log("toggleProductStatus");
-
-//         const {id: productId } = req.params;
-// console.log(productId,"productId");
-//         // Validate productId
-//         if (!mongoose.Types.ObjectId.isValid(productId)) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Invalid product ID.",
-//             });
-//         }
-
-//         // Aggregation pipeline to toggle isActive status
-//         const updatedProduct = await Product.aggregate([
-//             { $match: { _id: new mongoose.Types.ObjectId(productId) } }, // Find product by ID
-//             {
-//                 $set: { isActive: { $not: ["$isActive"] } } // Toggle isActive field
-//             },
-//             {
-//                 $merge: {
-//                     into: "products", // Update the existing document
-//                     whenMatched: "merge",
-//                     whenNotMatched: "discard"
-//                 }
-//             },
-//             { $match: { _id: new mongoose.Types.ObjectId(productId) } }, // Fetch the updated document
-//         ]);
-
-//         if (updatedProduct.length === 0) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: "Product not found.",
-//             });
-//         }
-
-//         const products = await getAllProducts(res);
-//         if (!Array.isArray(products)) return; // Prevent further execution if an error response is already sent
-
-//         res.status(200).json({
-//             success: true,
-//             message: `Product ${updatedProduct[0].isActive ? "unblocked" : "blocked"} successfully.`,
-//             product: products,
-//         });
-
-//     } catch (error) {
-//         console.error("Error toggling product status:", error);
-//         res.status(500).json({
-//             success: false,
-//             message: "An error occurred while updating the product status.",
-//             error: error.message,
-//         });
-//     }
-// };
 
 const toggleProductStatus = async (req, res) => {
   try {
+
     console.log("toggleProductStatus");
 
     const { id: productId } = req.params;
     console.log(productId, "productId");
+
+    if (!productId) {
+      return res.status(400).json({ message: "Product ID is required" });
+    }
 
     // Validate productId
     if (!mongoose.Types.ObjectId.isValid(productId)) {
@@ -477,9 +436,8 @@ const toggleProductStatus = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: `Product ${
-        product.isActive ? "unblocked" : "blocked"
-      } successfully.`,
+      message: `Product ${product.isActive ? "unblocked" : "blocked"
+        } successfully.`,
       product: products,
     });
   } catch (error) {
@@ -500,6 +458,7 @@ const getTrendingProducts = async (req, res) => {
     ); // Populate category
     console.log(products, "products");
 
+<<<<<<< HEAD
     if (!products) {
       return res.status(404).json({
         success: false,
@@ -522,6 +481,13 @@ const getTodayOffersProducts = async (req, res) => {
   try {
     // Find products by category and trending status
     const products = await Product.find({ today_offer: true }).populate(
+=======
+const getTrendingProducts = async (req, res) => {
+  try {
+
+    // Find products by category and trending status
+    const products = await Product.find({trending: true}).populate(
+>>>>>>> 1e29eb9e2b089ad15e68569191c92f4f51939c1d
       "category",
       "name description"
     ); // Populate category
@@ -536,22 +502,111 @@ const getTodayOffersProducts = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Trending products retrieved successfully.",
+<<<<<<< HEAD
       products,
+=======
+      products
+>>>>>>> 1e29eb9e2b089ad15e68569191c92f4f51939c1d
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+<<<<<<< HEAD
+=======
+
+const getTodayOffersProducts = async (req, res) => {
+  try {
+
+    // Find products by category and trending status
+    const products = await Product.find({today_offer: true}).populate(
+      "category",
+      "name description"
+    ); // Populate category
+
+    if (!products) {
+      return res.status(404).json({
+        success: false,
+        message: "No trending products found in this category.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Trending products retrieved successfully.",
+      products
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+//   const toggleProductStatus = async (req, res) => {
+//     try {
+//         console.log("toggleProductStatus");
+//         const {id: productId } = req.params;
+// console.log(productId,"productId");
+//         // Validate productId
+//         if (!mongoose.Types.ObjectId.isValid(productId)) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Invalid product ID.",
+//             });
+//         }
+//         // Aggregation pipeline to toggle isActive status
+//         const updatedProduct = await Product.aggregate([
+//             { $match: { _id: new mongoose.Types.ObjectId(productId) } }, // Find product by ID
+//             {
+//                 $set: { isActive: { $not: ["$isActive"] } } // Toggle isActive field
+//             },
+//             {
+//                 $merge: {
+//                     into: "products", // Update the existing document
+//                     whenMatched: "merge",
+//                     whenNotMatched: "discard"
+//                 }
+//             },
+//             { $match: { _id: new mongoose.Types.ObjectId(productId) } }, // Fetch the updated document
+//         ]);
+//         if (updatedProduct.length === 0) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: "Product not found.",
+//             });
+//         }
+//         const products = await getAllProducts(res);
+//         if (!Array.isArray(products)) return; // Prevent further execution if an error response is already sent
+//         res.status(200).json({
+//             success: true,
+//             message: `Product ${updatedProduct[0].isActive ? "unblocked" : "blocked"} successfully.`,
+//             product: products,
+//         });
+//     } catch (error) {
+//         console.error("Error toggling product status:", error);
+//         res.status(500).json({
+//             success: false,
+//             message: "An error occurred while updating the product status.",
+//             error: error.message,
+//         });
+//     }
+// };
+
+>>>>>>> 1e29eb9e2b089ad15e68569191c92f4f51939c1d
 module.exports = {
   getProducts,
+  allProducts,
   getSingleProduct,
   addProduct,
   updateProduct,
   deleteProduct,
-  getProductsByCategory,
   getCartSingleItem,
   getFilterProducts,
   toggleProductStatus,
   getTrendingProducts,
+<<<<<<< HEAD
   getTodayOffersProducts,
+=======
+  getTodayOffersProducts
+>>>>>>> 1e29eb9e2b089ad15e68569191c92f4f51939c1d
 };

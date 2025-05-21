@@ -108,107 +108,120 @@ const getAllOrder = async (req, res) => {
   }
 };
 
-//🆕 Create Order and Push to Shiprocket
+//✅ Create Order
 const createOrder = async (req, res) => {
-  // const validPaymentMethods = ["COD", "Credit Card", "Debit Card", "Net Banking", "UPI", "Wallet"];
-
   try {
+    console.log("createOrder");
     const userId = req.userId;
 
-    const {
-      orderItems,
-      shippingAddress,
-      paymentMethod,
-      currency = "INR",
-    } = req.body;
+    const { paymentMethod, currency = "INR" } = req.body;
 
-    console.log("createOrders start");
+    console.log("paymentMethod", paymentMethod);
 
-    console.log(orderItems,"orderItems")
-    console.log(shippingAddress,"shippingAddress")
-    console.log(paymentMethod,"paymentMethod")
-    console.log(currency,"currency")
-
-    // Validate request data
-    if (
-      Object.keys(orderItems).length === 0||
-      Object.keys(shippingAddress).length === 0 ||
-      !paymentMethod 
-    ) {
-      return res.status(400).json({ message: "Invalid order data" });
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid user ID." });
     }
 
-
-    //  return;
-
-    // if (!mongoose.Types.ObjectId.isValid(userId)) {
-    //   return res.status(400).json({ message: "Invalid user ID." });
-    // }
-
-    //calculate Totalprice
-    let totalPrice = orderItems.product.sale_price * orderItems.quantity;
-
-    // Step 1: Create a new order in MongoDB
-    const newOrder = await Order.create({
+    const shippingAddress = await Address.find({
       user: userId,
-      orderItems: {
-        product: orderItems.product._id,
-        quantity: orderItems.quantity,
-      },
-      shippingAddress: {
-        fullName: shippingAddress?.fullName,
-        phone: shippingAddress?.phone,
-        street: shippingAddress?.street,
-        city: shippingAddress?.city,
-        state: shippingAddress?.state,
-        zip: shippingAddress?.zip,
-        country: shippingAddress?.country,
-      },
-      paymentMethod,
-      totalPrice,
-      paymentStatus: "Pending",
-      deliveryStatus: "Pending",
+      isDefault: true,
     });
 
-    if (!newOrder) {
-      res
-        .status(500)
-        .json({ message: "Order creation failed. Please try again later" });
+    // if (!address) {
+    if (!shippingAddress) {
+      return res.status(404).json({
+        success: false,
+        message: "Address not found.",
+      });
+    }
+
+    const user = await User.findById(userId).populate("cart.product");
+    if (!user || !user.cart || user.cart.length === 0) {
+      return res.status(400).json({ message: "Cart is empty" });
+    }
+
+    let totalAmount = 0;
+    const createdOrders = [];
+
+    for (let cartItem of user.cart) {
+      const product = cartItem.product;
+      const quantity = cartItem.quantity;
+
+      if (!product) continue;
+
+      if (product.stock < quantity) {
+        return res
+          .status(400)
+          .json({ message: `Insufficient stock for ${product.name}` });
+      }
+
+      const orderPrice =
+        (product.sale_price || product.product_price) * quantity;
+      totalAmount += orderPrice;
+
+      const newOrder = await Order.create({
+        user: userId,
+        orderItems: {
+          product: product._id,
+          quantity,
+        },
+        shippingAddress,
+        paymentMethod,
+        totalPrice: orderPrice,
+      });
+
+      // Reduce stock
+      product.stock -= quantity;
+      await product.save();
+
+      createdOrders.push(newOrder);
     }
 
     let razorpayOrder = null;
 
-    // Step 2: Handle Payment
+    // Create one Razorpay order if payment is not COD
     if (paymentMethod !== "COD") {
       const options = {
-        amount: totalPrice * 100, // Convert to paise
+        amount: totalAmount * 100, // in paise
         currency,
-        receipt: `receipt_${newOrder._id}`,
+        receipt: `receipt_${createdOrders[0]._id}`,
       };
 
       razorpayOrder = await razorpay.orders.create(options);
+
       if (!razorpayOrder) {
         return res
           .status(500)
           .json({ message: "Razorpay order creation failed" });
       }
 
-      newOrder.razorpay_order_id = razorpayOrder.id;
-      await newOrder.save();
-      // console.log(`Razorpay Order ${razorpayOrder.id} created.`);
+      // Save razorpay ID to all orders
+      await Promise.all(
+        createdOrders.map(async (order) => {
+          order.razorpay_order_id = razorpayOrder.id;
+          await order.save();
+        })
+      );
     }
 
-    res.status(201).json({
+    // Clear the cart
+    user.cart = [];
+    user.cart_total = 0;
+    await user.save();
+
+    return res.status(201).json({
       success: true,
       paymentMethod,
-      message: "Order created successfully",
-      order: newOrder,
-      razorpayOrder: razorpayOrder ? razorpayOrder : null,
+      message: "Orders created successfully from cart",
+      orders: createdOrders,
+      totalAmount,
+      razorpayOrder: razorpayOrder || null,
     });
   } catch (error) {
-    // console.log(error,"errorsss")
-    console.error("Error creating order:", error);
-    res.status(500).json({ message: "Order creation failed" });
+    console.error("Error placing order:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
   }
 };
 

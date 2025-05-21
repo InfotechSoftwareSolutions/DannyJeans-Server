@@ -13,6 +13,8 @@ function checkAuthww(req, res, next) {
 }
 // Product Management
 //router.get("/",productController.getProductsByCategory);//→ Get all products
+router.get("/trending",productController.getTrendingProducts);//→ Get a single product by ID
+router.get("/today-offers",productController.getTodayOffersProducts);//→ Get a single product by ID
 router.get("/",productController.getProducts);//→ Get all products 
 router.get("/in-cart/:id",checkAuth,productController.getCartSingleItem);//→ Get all products 
 router.get("/:id",productController.getSingleProduct);//→ Get a single product by ID

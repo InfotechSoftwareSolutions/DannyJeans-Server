@@ -66,10 +66,10 @@ const getCartSingleItem = async (req, res) => {
     ).populate("cart.product");
 
     if (!user || !user.cart.length) {
-        return {
-            success: false,
-            message: "Product not found in the cart",
-          };
+      return {
+        success: false,
+        message: "Product not found in the cart",
+      };
     }
     const product = user.cart[0];
 
@@ -170,7 +170,15 @@ const getSingleProduct = async (req, res) => {
 
 const addProduct = async (req, res) => {
   try {
-    let { name, description, product_price, sale_price, offer, category, stock } = req.body;
+    let {
+      name,
+      description,
+      product_price,
+      sale_price,
+      offer,
+      category,
+      stock,
+    } = req.body;
 
     // Parse and validate the variant
     let variant = [];
@@ -178,10 +186,14 @@ const addProduct = async (req, res) => {
       try {
         variant = JSON.parse(req.body.variant);
         if (!Array.isArray(variant)) {
-          return res.status(400).json({ message: "Invalid variant format. Must be an array." });
+          return res
+            .status(400)
+            .json({ message: "Invalid variant format. Must be an array." });
         }
       } catch (error) {
-        return res.status(400).json({ message: "Invalid variant JSON format." });
+        return res
+          .status(400)
+          .json({ message: "Invalid variant JSON format." });
       }
     }
 
@@ -191,8 +203,16 @@ const addProduct = async (req, res) => {
     stock = Number(stock);
 
     // Validate required fields
-    if (!name || !description || !product_price || !category || stock === undefined) {
-      return res.status(400).json({ message: "All required fields must be provided." });
+    if (
+      !name ||
+      !description ||
+      !product_price ||
+      !category ||
+      stock === undefined
+    ) {
+      return res
+        .status(400)
+        .json({ message: "All required fields must be provided." });
     }
 
     if (!mongoose.Types.ObjectId.isValid(category)) {
@@ -205,7 +225,9 @@ const addProduct = async (req, res) => {
     // Check if the product already exists
     const existingProduct = await Product.findOne({ name });
     if (existingProduct) {
-      return res.status(400).json({ success: false, message: "Product already exists." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Product already exists." });
     }
 
     // Create a new product with variants
@@ -221,7 +243,12 @@ const addProduct = async (req, res) => {
     });
 
     if (!product) {
-      return res.status(400).json({ success: false, message: "Product creation failed. Try again." });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Product creation failed. Try again.",
+        });
     }
 
     res.status(201).json({
@@ -464,7 +491,57 @@ const toggleProductStatus = async (req, res) => {
     });
   }
 };
+const getTrendingProducts = async (req, res) => {
+  try {
+    // Find products by category and trending status
+    const products = await Product.find({ trending: true }).populate(
+      "category",
+      "name description"
+    ); // Populate category
+    console.log(products, "products");
 
+    if (!products) {
+      return res.status(404).json({
+        success: false,
+        message: "No trending products found in this category.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Trending products retrieved successfully.",
+      products,
+    });
+  } catch (error) {
+    log.error("Error fetching trending products:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getTodayOffersProducts = async (req, res) => {
+  try {
+    // Find products by category and trending status
+    const products = await Product.find({ today_offer: true }).populate(
+      "category",
+      "name description"
+    ); // Populate category
+
+    if (!products) {
+      return res.status(404).json({
+        success: false,
+        message: "No trending products found in this category.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Trending products retrieved successfully.",
+      products,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 module.exports = {
   getProducts,
   getSingleProduct,
@@ -475,4 +552,6 @@ module.exports = {
   getCartSingleItem,
   getFilterProducts,
   toggleProductStatus,
+  getTrendingProducts,
+  getTodayOffersProducts,
 };

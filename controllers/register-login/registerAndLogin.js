@@ -49,6 +49,7 @@ const signup = async (req, res, next) => {
 
         res.status(201).json({
             message: "Account has been created successfully",
+            success: true
         });
 
     } catch (error) {

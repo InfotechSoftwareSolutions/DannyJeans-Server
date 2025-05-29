@@ -195,20 +195,8 @@ const getSingleProduct = async (req, res) => {
 //✅ Add a new product
 const addProduct = async (req, res) => {
   try {
-<<<<<<< HEAD
-    let {
-      name,
-      description,
-      product_price,
-      sale_price,
-      offer,
-      category,
-      stock,
-    } = req.body;
-=======
 
     let { name, description, product_price, sale_price, offer, category, stock } = req.body;
->>>>>>> 1e29eb9e2b089ad15e68569191c92f4f51939c1d
 
     // Parse and validate the variant
     let variant = [];
@@ -404,7 +392,7 @@ const toggleProductStatus = async (req, res) => {
 
     console.log("toggleProductStatus");
 
-    const { id: productId } = req.params;
+    const {productId } = req.params;
     console.log(productId, "productId");
 
     if (!productId) {
@@ -449,45 +437,15 @@ const toggleProductStatus = async (req, res) => {
     });
   }
 };
+
+
 const getTrendingProducts = async (req, res) => {
-  try {
-    // Find products by category and trending status
-    const products = await Product.find({ trending: true }).populate(
-      "category",
-      "name description"
-    ); // Populate category
-    console.log(products, "products");
-
-<<<<<<< HEAD
-    if (!products) {
-      return res.status(404).json({
-        success: false,
-        message: "No trending products found in this category.",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Trending products retrieved successfully.",
-      products,
-    });
-  } catch (error) {
-    log.error("Error fetching trending products:", error);
-    res.status(500).json({ message: error.message });
-  }
-};
-
-const getTodayOffersProducts = async (req, res) => {
-  try {
-    // Find products by category and trending status
-    const products = await Product.find({ today_offer: true }).populate(
-=======
-const getTrendingProducts = async (req, res) => {
+  console.log("getTrendingProducts");
+  
   try {
 
     // Find products by category and trending status
     const products = await Product.find({trending: true}).populate(
->>>>>>> 1e29eb9e2b089ad15e68569191c92f4f51939c1d
       "category",
       "name description"
     ); // Populate category
@@ -502,18 +460,12 @@ const getTrendingProducts = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Trending products retrieved successfully.",
-<<<<<<< HEAD
-      products,
-=======
       products
->>>>>>> 1e29eb9e2b089ad15e68569191c92f4f51939c1d
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-<<<<<<< HEAD
-=======
 
 const getTodayOffersProducts = async (req, res) => {
   try {
@@ -592,7 +544,6 @@ const getTodayOffersProducts = async (req, res) => {
 //     }
 // };
 
->>>>>>> 1e29eb9e2b089ad15e68569191c92f4f51939c1d
 module.exports = {
   getProducts,
   allProducts,
@@ -604,9 +555,5 @@ module.exports = {
   getFilterProducts,
   toggleProductStatus,
   getTrendingProducts,
-<<<<<<< HEAD
-  getTodayOffersProducts,
-=======
   getTodayOffersProducts
->>>>>>> 1e29eb9e2b089ad15e68569191c92f4f51939c1d
 };

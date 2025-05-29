@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 
 const { User } = require("../models/userModel.js");
 const { Order } = require("../models/orderModel.js");
+const { Address } = require("../models/addressModel.js");
 const razorpay = require("../utils/razorpay.js"); // Import Razorpay instance
 //temp
 const { getAuthToken } = require("../utils/shiprocketToken.js");
@@ -114,18 +115,20 @@ const createOrder = async (req, res) => {
     console.log("createOrder");
     const userId = req.userId;
 
-    const { paymentMethod, currency = "INR" } = req.body;
+    const { paymentMethod,shippingAddress:addressId, currency = "INR" } = req.body;
 
-    console.log("paymentMethod", paymentMethod);
+    console.log("req.body", req.body);
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid user ID." });
     }
 
-    const shippingAddress = await Address.find({
-      user: userId,
-      isDefault: true,
-    });
+    // const shippingAddress = await Address.find({
+    //   user: userId,
+    //   isDefault: true,
+    // });
+
+ const shippingAddress = await Address.findById(addressId._id);
 
     // if (!address) {
     if (!shippingAddress) {
